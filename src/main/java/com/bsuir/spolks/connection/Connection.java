@@ -4,6 +4,9 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.bsuir.spolks.command.ICommand;
+import com.bsuir.spolks.parser.Parser;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -106,6 +109,8 @@ public class Connection {
                         String cmd = new String(clientMessage, 0, countBytes);
                         LOGGER.log(Level.DEBUG, "Client: " + cmd);
 
+                        ICommand command = new Parser().handle(cmd);
+                        command.execute();
                     } catch (IOException e) {
                         LOGGER.log(Level.ERROR, "Client stopped working with server.");
                         break;

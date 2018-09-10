@@ -1,0 +1,15 @@
+package com.bsuir.spolks.parser;
+
+import com.bsuir.spolks.command.ICommand;
+
+public interface IParser {
+
+    /**
+     * Parse command from String and
+     * return the CommandType instance.
+     *
+     * @param command as string
+     * @return command instance
+     */
+    ICommand parse(String command);
+}

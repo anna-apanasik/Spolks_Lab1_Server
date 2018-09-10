@@ -1,5 +1,6 @@
 package com.bsuir.spolks.controller;
 
+import com.bsuir.spolks.util.InputManager;
 import com.bsuir.spolks.connection.Connection;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -32,9 +33,10 @@ public final class Controller {
 
     private Connection connection;
 
+    private InputManager keyboard;
 
     private Controller() {
-
+        keyboard = new InputManager();
     }
 
     /**
@@ -70,5 +72,32 @@ public final class Controller {
         if (connection.open()) {
             connection.listen();
         }
+    }
+
+    /**
+     * Set connection.
+     *
+     * @param c connection instance
+     */
+    public void setConnection(Connection c) {
+        this.connection = c;
+    }
+
+    /**
+     * Get opened connection.
+     *
+     * @return connection
+     */
+    public Connection getConnection() {
+        return connection;
+    }
+
+    /**
+     * Get keyboard instance.
+     *
+     * @return keyboard
+     */
+    public InputManager getKeyboard() {
+        return keyboard;
     }
 }
