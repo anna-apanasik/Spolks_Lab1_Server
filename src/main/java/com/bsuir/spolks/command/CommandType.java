@@ -1,7 +1,8 @@
 package com.bsuir.spolks.command;
 
 public enum CommandType {
-    ECHO("echo", "Echo server", new EchoCommand());
+    ECHO("echo", "Echo server", new EchoCommand()),
+    TIME("time", "Get server time", new TimeCommand());
     private String commandName;
     private String description;
 
