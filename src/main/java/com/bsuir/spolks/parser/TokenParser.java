@@ -2,6 +2,8 @@ package com.bsuir.spolks.parser;
 
 import com.bsuir.spolks.command.CommandType;
 import com.bsuir.spolks.command.ICommand;
+import com.bsuir.spolks.exception.CommandNotFoundException;
+import com.bsuir.spolks.exception.WrongCommandFormatException;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,7 +17,7 @@ public class TokenParser extends AbstractParser {
 
     private ICommand command;
 
-    public TokenParser(String commandName) {
+    public TokenParser(String commandName) throws CommandNotFoundException {
         this.command = CommandType.findCommand(commandName);
     }
 
@@ -26,7 +28,7 @@ public class TokenParser extends AbstractParser {
      * @return command instance
      */
     @Override
-    public ICommand handle(String cmd) {
+    public ICommand handle(String cmd) throws WrongCommandFormatException {
         Pattern pattern = Pattern.compile(CMD_TOKEN_REGEX);
         Matcher matcher = pattern.matcher(cmd);
 

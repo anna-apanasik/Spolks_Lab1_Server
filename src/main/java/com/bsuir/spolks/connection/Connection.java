@@ -6,6 +6,8 @@ import org.apache.logging.log4j.Logger;
 
 import com.bsuir.spolks.command.ICommand;
 import com.bsuir.spolks.parser.Parser;
+import com.bsuir.spolks.exception.CommandNotFoundException;
+import com.bsuir.spolks.exception.WrongCommandFormatException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -114,6 +116,8 @@ public class Connection {
                     } catch (IOException e) {
                         LOGGER.log(Level.ERROR, "Client stopped working with server.");
                         break;
+                    } catch (WrongCommandFormatException | CommandNotFoundException e) {
+                        LOGGER.log(Level.ERROR, "Error: " + e.getMessage());
                     }
                 }
 

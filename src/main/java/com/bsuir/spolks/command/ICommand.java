@@ -1,5 +1,7 @@
 package com.bsuir.spolks.command;
 
+import com.bsuir.spolks.exception.WrongCommandFormatException;
+
 import java.util.Map;
 
 public interface ICommand {
@@ -27,7 +29,7 @@ public interface ICommand {
     /**
      * Verify inputted tokens.
      */
-    void verifyTokens();
+    void verifyTokens() throws WrongCommandFormatException;
 
     /**
      * Build command instance.

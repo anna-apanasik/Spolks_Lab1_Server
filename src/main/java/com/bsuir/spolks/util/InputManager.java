@@ -2,6 +2,8 @@ package com.bsuir.spolks.util;
 
 import com.bsuir.spolks.command.ICommand;
 import com.bsuir.spolks.parser.Parser;
+import com.bsuir.spolks.exception.CommandNotFoundException;
+import com.bsuir.spolks.exception.WrongCommandFormatException;
 
 import java.util.Scanner;
 
@@ -17,7 +19,7 @@ public class InputManager {
      *
      * @return command interface
      */
-    public ICommand getCommand() {
+    public ICommand getCommand() throws WrongCommandFormatException, CommandNotFoundException {
         String cmd = scanner.nextLine();
         return new Parser().parse(cmd);
     }

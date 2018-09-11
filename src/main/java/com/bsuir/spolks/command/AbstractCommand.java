@@ -1,5 +1,7 @@
 package com.bsuir.spolks.command;
 
+import com.bsuir.spolks.exception.WrongCommandFormatException;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Level;
@@ -29,13 +31,16 @@ abstract class AbstractCommand implements ICommand {
      * Verify inputted tokens.
      */
     @Override
-    public final void verifyTokens()  {
+    public final void verifyTokens() throws WrongCommandFormatException {
         LOGGER.log(Level.DEBUG, "Tokens: " + tokens);
 
         if (!tokens.isEmpty()) {
             for (Map.Entry<String, String> fl : tokens.entrySet()) {
                 final String key = fl.getKey();
-                LOGGER.log(Level.DEBUG, key);
+
+                if (!availableTokens.containsKey(key)) {
+                    throw new WrongCommandFormatException("The command does not contain '" + key + "' token.");
+                }
             }
         }
     }

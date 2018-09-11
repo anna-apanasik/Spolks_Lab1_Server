@@ -1,5 +1,7 @@
 package com.bsuir.spolks.command;
 
+import com.bsuir.spolks.exception.CommandNotFoundException;
+
 public enum CommandType {
     ECHO("echo", "Echo server", new EchoCommand()),
     TIME("time", "Get server time", new TimeCommand());
@@ -27,12 +29,13 @@ public enum CommandType {
      * @param commandName
      * @return command interface
      */
-    public static ICommand findCommand(String commandName) {
+    public static ICommand findCommand(String commandName) throws CommandNotFoundException {
         for(CommandType type : CommandType.values()) {
             if(type.getName().equals(commandName)) {
                 return type.getCommand();
             }
         }
+        throw new CommandNotFoundException("Cannot find command by name[=" + commandName + "]");
     }
 
     /**
