@@ -1,5 +1,6 @@
 package com.bsuir.spolks.connection;
 
+import com.bsuir.spolks.util.Storage;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,6 +39,8 @@ public class Connection {
         clientMessage = new byte[SIZE_BUFF];
     }
 
+    private Storage uuidStorage = new Storage();
+
     /**
      * Write to stream.
      *
@@ -66,8 +69,12 @@ public class Connection {
      */
     public String read() throws IOException {
         int countBytes = is.read(clientMessage);
-
-        return new String(clientMessage, 0, countBytes);
+        try {
+            String result = new String(clientMessage, 0, countBytes);
+            return result;
+        } catch (StringIndexOutOfBoundsException e) {
+            return null;
+        }
     }
 
     /**
@@ -99,6 +106,7 @@ public class Connection {
 
                 LOGGER.log(Level.INFO, "Client is connected!");
                 this.initStream(client);
+                getClientUUID();
 
                 while (true) {
                     try {
@@ -109,7 +117,9 @@ public class Connection {
                         }
 
                         String cmd = new String(clientMessage, 0, countBytes);
-                        LOGGER.log(Level.DEBUG, "Client: " + cmd);
+                        if (cmd.equals("true")) {
+                            continue;
+                        }
 
                         ICommand command = new Parser().handle(cmd);
                         command.execute();
@@ -128,6 +138,15 @@ public class Connection {
         }
     }
 
+    private void getClientUUID() {
+        try {
+            String uuid = new String(clientMessage, 0, is.read(clientMessage));
+            uuidStorage.setClientUUID(uuid);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void initStream(Socket s) throws IOException {
         is = s.getInputStream();
         os = s.getOutputStream();
@@ -138,5 +157,9 @@ public class Connection {
         os.close();
         s.close();
         System.out.println("Client has been disconnected!");
+    }
+
+    public Storage getUuidStorage() {
+        return uuidStorage;
     }
 }

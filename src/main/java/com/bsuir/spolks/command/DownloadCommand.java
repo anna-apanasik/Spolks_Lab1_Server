@@ -12,8 +12,6 @@ import java.util.concurrent.TimeUnit;
 class DownloadCommand extends AbstractCommand {
 
     private static final String SUCCESS = "success";
-    private static final String START_TRANSFER = "start";
-
     private static final int BUFF_SIZE = 12288;
 
     DownloadCommand() {
@@ -31,7 +29,7 @@ class DownloadCommand extends AbstractCommand {
             if (path != null) {
                 executeDownload(path);
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             LOGGER.log(Level.ERROR, "Error: " + e.getMessage());
         }
     }
@@ -46,7 +44,7 @@ class DownloadCommand extends AbstractCommand {
         return new DownloadCommand();
     }
 
-    private void executeDownload(String path) throws IOException, InterruptedException {
+    private void executeDownload(String path) throws IOException {
         Connection connection = Controller.getInstance().getConnection();
 
         if (connection != null)    {
@@ -57,29 +55,42 @@ class DownloadCommand extends AbstractCommand {
             if (file.exists() && !file.isDirectory()) {
                 connection.write(SUCCESS + " " + fileSize);
 
-                if (START_TRANSFER.equals(connection.read())) {
-                    FileInputStream fin = new FileInputStream(file);
+                DataInputStream dataInputStream = new DataInputStream(new FileInputStream(file));
 
-                    int receivedBytes;
-                    byte fileContent[] = new byte[BUFF_SIZE];
+                int receivedBytes;
+                int fileProgress = connection.getUuidStorage().getFileProgress(path);
+                int progressFromClient = Integer.parseInt(connection.read());
 
-                    Date start = new Date();
+                if(progressFromClient > 0 && progressFromClient != fileProgress) {
+                    connection.getUuidStorage().updateFileProgress(path, progressFromClient);
+                    fileProgress = connection.getUuidStorage().getFileProgress(path);
+                }
 
-                    while ((receivedBytes = fin.read(fileContent, 0, BUFF_SIZE)) != -1) {
+                byte fileContent[] = new byte[BUFF_SIZE];
+
+                Date start = new Date();
+
+                dataInputStream.skip(fileProgress);
+                while ((receivedBytes = dataInputStream.read(fileContent)) != -1) {
+                    if (Boolean.valueOf(connection.read())) {
                         connection.write(fileContent, receivedBytes);
-                        Thread.sleep(1);
-                        LOGGER.log(Level.DEBUG, "Sent " + receivedBytes + " bytes.");
+                        fileProgress += BUFF_SIZE;
+                        connection.getUuidStorage().updateFileProgress(path, fileProgress);
                     }
+                }
 
-                    Date end = new Date();
-                    long resultTime = end.getTime() - start.getTime();
+                Date end = new Date();
+                long resultTime = end.getTime() - start.getTime();
 
+                if (fileProgress >= fileSize) {
+                    connection.getUuidStorage().deleteCurrentClient();
                     LOGGER.log(Level.INFO, "File is transferred.");
                     long resultTimeInSeconds = TimeUnit.SECONDS.convert(resultTime, TimeUnit.MILLISECONDS);
                     LOGGER.log(Level.INFO, "Transfer time: " + ((resultTimeInSeconds > 0) ? resultTimeInSeconds + "s" : resultTime + "ms"));
                 } else {
-                    LOGGER.log(Level.ERROR, START_TRANSFER + " flag not founded...");
+                    LOGGER.log(Level.INFO, "Something went wrong! File isn't transferred.");
                 }
+
             } else {
                 final String message = "File does not exists or something went wrong.";
                 connection.write(message);
