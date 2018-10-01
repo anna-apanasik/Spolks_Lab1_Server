@@ -42,7 +42,7 @@ public class EchoCommand extends AbstractCommand {
     private void executeEcho(String content) throws IOException {
         LOGGER.log(Level.INFO, "Received message: " + content);
         Connection connection = Controller.getInstance().getConnection();
-        connection.write(content);
+        connection.write("Message was received");
     }
 
     private enum AvailableToken {

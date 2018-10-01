@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 class DownloadCommand extends AbstractCommand {
 
     private static final String SUCCESS = "success";
+    private static final String GET_PROGRESS = "progress";
     private static final int BUFF_SIZE = 12288;
 
     DownloadCommand() {
@@ -58,13 +59,9 @@ class DownloadCommand extends AbstractCommand {
                 DataInputStream dataInputStream = new DataInputStream(new FileInputStream(file));
 
                 int receivedBytes;
-                int fileProgress = connection.getUuidStorage().getFileProgress(path);
-                int progressFromClient = Integer.parseInt(connection.read());
+                int fileProgress = Integer.parseInt(connection.read());
 
-                if(progressFromClient > 0 && progressFromClient != fileProgress) {
-                    connection.getUuidStorage().updateFileProgress(path, progressFromClient);
-                    fileProgress = connection.getUuidStorage().getFileProgress(path);
-                }
+                connection.write(GET_PROGRESS);
 
                 byte fileContent[] = new byte[BUFF_SIZE];
 
@@ -73,9 +70,14 @@ class DownloadCommand extends AbstractCommand {
                 dataInputStream.skip(fileProgress);
                 while ((receivedBytes = dataInputStream.read(fileContent)) != -1) {
                     if (Boolean.valueOf(connection.read())) {
-                        connection.write(fileContent, receivedBytes);
+                        connection.write(fileContent, 0, receivedBytes);
                         fileProgress += BUFF_SIZE;
-                        connection.getUuidStorage().updateFileProgress(path, fileProgress);
+
+                        try {
+                            Thread.sleep(4);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
 
@@ -83,7 +85,6 @@ class DownloadCommand extends AbstractCommand {
                 long resultTime = end.getTime() - start.getTime();
 
                 if (fileProgress >= fileSize) {
-                    connection.getUuidStorage().deleteCurrentClient();
                     LOGGER.log(Level.INFO, "File is transferred.");
                     long resultTimeInSeconds = TimeUnit.SECONDS.convert(resultTime, TimeUnit.MILLISECONDS);
                     LOGGER.log(Level.INFO, "Transfer time: " + ((resultTimeInSeconds > 0) ? resultTimeInSeconds + "s" : resultTime + "ms"));
