@@ -24,7 +24,7 @@ public class Connection {
 
     private ServerSocket socket;
 
-    private static final int PORT = 8888;
+    private static final int PORT = 9999;
     private static final int BACKLOG = 10;
 
     private DataOutputStream os;

@@ -13,7 +13,7 @@ class DownloadCommand extends AbstractCommand {
 
     private static final String SUCCESS = "success";
     private static final String GET_PROGRESS = "progress";
-    private static final int BUFF_SIZE = 12288;
+    private static final int BUFF_SIZE = 65536;
 
     DownloadCommand() {
         Arrays.stream(AvailableToken.values()).forEach(t -> availableTokens.put(t.getName(), t.getRegex()));
@@ -64,20 +64,14 @@ class DownloadCommand extends AbstractCommand {
                 connection.write(GET_PROGRESS);
 
                 byte fileContent[] = new byte[BUFF_SIZE];
+                dataInputStream.skip(fileProgress);
 
                 Date start = new Date();
 
-                dataInputStream.skip(fileProgress);
                 while ((receivedBytes = dataInputStream.read(fileContent)) != -1) {
                     if (Boolean.valueOf(connection.read())) {
                         connection.write(fileContent, 0, receivedBytes);
                         fileProgress += BUFF_SIZE;
-
-                        try {
-                            Thread.sleep(4);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
                     }
                 }
 
