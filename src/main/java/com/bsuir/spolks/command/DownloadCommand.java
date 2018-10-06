@@ -81,7 +81,9 @@ class DownloadCommand extends AbstractCommand {
                 if (fileProgress >= fileSize) {
                     LOGGER.log(Level.INFO, "File is transferred.");
                     long resultTimeInSeconds = TimeUnit.SECONDS.convert(resultTime, TimeUnit.MILLISECONDS);
+                    double bitrate = (double) fileSize / 1024 / (double)resultTime;
                     LOGGER.log(Level.INFO, "Transfer time: " + ((resultTimeInSeconds > 0) ? resultTimeInSeconds + "s" : resultTime + "ms"));
+                    LOGGER.log(Level.INFO,  "Bitrate: " + (double) Math.round(bitrate * 1000) / 1000 + "Kb/ms");
                 } else {
                     LOGGER.log(Level.INFO, "Something went wrong! File isn't transferred.");
                 }
