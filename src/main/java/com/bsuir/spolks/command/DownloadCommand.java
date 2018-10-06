@@ -69,10 +69,8 @@ class DownloadCommand extends AbstractCommand {
                 Date start = new Date();
 
                 while ((receivedBytes = dataInputStream.read(fileContent)) != -1) {
-                    if (Boolean.valueOf(connection.read())) {
                         connection.write(fileContent, 0, receivedBytes);
                         fileProgress += BUFF_SIZE;
-                    }
                 }
 
                 Date end = new Date();
