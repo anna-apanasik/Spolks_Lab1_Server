@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Level;
 
+import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,7 +14,7 @@ abstract class AbstractCommand implements ICommand {
 
     Map<String, String> availableTokens;
     private Map<String, String> tokens;
-
+    SocketChannel channel;
     /**
      * Logger to getCommand logs.
      */
@@ -61,5 +62,10 @@ abstract class AbstractCommand implements ICommand {
     @Override
     public final void putToken(String name, String value) {
         this.tokens.put(name, value);
+    }
+
+    @Override
+    public void setChannel(SocketChannel channel) {
+        this.channel = channel;
     }
 }

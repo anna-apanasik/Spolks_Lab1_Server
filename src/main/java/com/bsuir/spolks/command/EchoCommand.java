@@ -1,10 +1,10 @@
 package com.bsuir.spolks.command;
 
-import com.bsuir.spolks.connection.Connection;
-import com.bsuir.spolks.controller.Controller;
+import com.bsuir.spolks.connection.ClientSession;
 import org.apache.logging.log4j.Level;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class EchoCommand extends AbstractCommand {
@@ -17,7 +17,7 @@ public class EchoCommand extends AbstractCommand {
      * Execute command.
      */
     @Override
-    public void execute() {
+    public void execute(ClientSession session) {
         try {
             String content = getTokens().get(AvailableToken.CONTENT.getName());
 
@@ -41,8 +41,8 @@ public class EchoCommand extends AbstractCommand {
 
     private void executeEcho(String content) throws IOException {
         LOGGER.log(Level.INFO, "Received message: " + content);
-        Connection connection = Controller.getInstance().getConnection();
-        connection.write("Message was received");
+        ByteBuffer buff = ByteBuffer.wrap(content.getBytes());
+        channel.write(buff);
     }
 
     private enum AvailableToken {

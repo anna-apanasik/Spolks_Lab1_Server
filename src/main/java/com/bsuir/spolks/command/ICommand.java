@@ -1,7 +1,9 @@
 package com.bsuir.spolks.command;
 
+import com.bsuir.spolks.connection.ClientSession;
 import com.bsuir.spolks.exception.WrongCommandFormatException;
 
+import java.nio.channels.SocketChannel;
 import java.util.Map;
 
 public interface ICommand {
@@ -9,7 +11,7 @@ public interface ICommand {
     /**
      * Execute command.
      */
-    void execute();
+    void execute(ClientSession session);
 
     /**
      * Put token to command.
@@ -37,4 +39,10 @@ public interface ICommand {
      * @return instance
      */
     ICommand build();
+
+    /**
+     * Set command channel.
+     * @param channel
+     */
+    void setChannel(SocketChannel channel);
 }

@@ -1,19 +1,16 @@
 package com.bsuir.spolks.connection;
 
-import com.bsuir.spolks.util.Storage;
+import com.bsuir.spolks.command.DownloadCommand;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.bsuir.spolks.command.ICommand;
-import com.bsuir.spolks.parser.Parser;
-import com.bsuir.spolks.exception.CommandNotFoundException;
-import com.bsuir.spolks.exception.WrongCommandFormatException;
-
-import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
-
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.channels.*;
+import java.util.HashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class Connection {
 
@@ -22,43 +19,18 @@ public class Connection {
      */
     private static final Logger LOGGER = LogManager.getLogger();
 
-    private ServerSocket socket;
-
+    //    private static final String ADDRESS = "192.168.10.10";
+    private static final String ADDRESS = "127.0.0.1";
     private static final int PORT = 9999;
-    private static final int BACKLOG = 10;
+    private static final int LISTEN_PERIOD_TIME_MS = 500;
 
-    private DataOutputStream os;
-    private DataInputStream is;
+    static HashMap<SelectionKey, ClientSession> clientMap = new HashMap<>();
 
-    private String clientMessage;
+    private ServerSocketChannel serverChannel;
+    private Selector selector;
+    private SelectionKey serverKey;
 
     public Connection() {
-    }
-
-    private Storage uuidStorage = new Storage();
-
-    /**
-     * Write to stream.
-     *
-     * @param data
-     * @throws IOException
-     */
-    public void write(String data) throws IOException {
-        os.writeUTF(data);
-    }
-
-    public void write(byte b[], int off, int len) throws IOException {
-        os.write(b, off, len);
-    }
-
-    /**
-     * Read stream data.
-     *
-     * @return data
-     * @throws IOException
-     */
-    public String read() throws IOException {
-        return is.readUTF();
     }
 
     /**
@@ -68,7 +40,13 @@ public class Connection {
      */
     public boolean open() {
         try {
-            socket = new ServerSocket(PORT, BACKLOG);
+            InetSocketAddress sockAddr = new InetSocketAddress(ADDRESS, PORT);
+
+            serverChannel = ServerSocketChannel.open();
+            serverChannel.configureBlocking(false);
+            serverKey = serverChannel.register(selector = Selector.open(), SelectionKey.OP_ACCEPT);
+            serverChannel.bind(sockAddr);
+
             LOGGER.log(Level.INFO, "Server started.");
 
             return true;
@@ -82,59 +60,76 @@ public class Connection {
      * Listen for clients.
      */
     public void listen() {
-        while (true) {
-            Socket client;
-
+        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
             try {
-                client = socket.accept();
+                listenExecutor();
+            } catch (IOException e) {
+                LOGGER.log(Level.ERROR, e.getMessage());
+            }
+        }, 0, LISTEN_PERIOD_TIME_MS, TimeUnit.MILLISECONDS);
+    }
 
-                LOGGER.log(Level.INFO, "Client is connected!");
-                this.initStream(client);
+    private void listenExecutor() throws IOException {
+        selector.selectNow();
 
-                while (true) {
-                    try {
+        for (SelectionKey key : selector.selectedKeys()) {
+            try {
+                if (!key.isValid()) {
+                    LOGGER.log(Level.WARN, "Key is invalid...");
+                    continue;
+                }
 
-                        clientMessage = is.readUTF();
-                        if (clientMessage.isEmpty()) {
-                            break;
-                        }
-                        String cmd = clientMessage;
+                if (key == serverKey) {
+                    SocketChannel acceptedChannel = serverChannel.accept();
 
-                        if (cmd.equals("true")) {
-                            continue;
-                        }
+                    if (acceptedChannel == null) {
+                        LOGGER.log(Level.ERROR, "Accepted channel is null.");
+                        continue;
+                    }
 
-                        ICommand command = new Parser().handle(cmd);
-                        command.execute();
-                    } catch (IOException e) {
-                        LOGGER.log(Level.ERROR, "Client stopped working with server.");
-                        break;
-                    } catch (WrongCommandFormatException | CommandNotFoundException e) {
-                        LOGGER.log(Level.ERROR, "Error: " + e.getMessage());
+                    acceptedChannel.configureBlocking(false);
+
+                    SelectionKey readKey = acceptedChannel.register(selector, SelectionKey.OP_READ);
+                    ClientSession newClientSession = new ClientSession(readKey, acceptedChannel);
+
+                    clientMap.put(readKey, newClientSession);
+
+                    LOGGER.log(Level.INFO, "Client " + acceptedChannel.getRemoteAddress() + " connected.");
+                    LOGGER.log(Level.INFO, "Total clients: " + clientMap.size());
+                }
+
+                boolean isUserDisconnected = false;
+
+
+                if (key.isReadable()) {
+                    ClientSession session = clientMap.get(key);
+                    if (session == null) {
+                        LOGGER.log(Level.ERROR, "Client session not found.");
+                        continue;
+                    }
+
+                    session.read();
+                    isUserDisconnected = session.isUserDisconnected();
+                }
+
+                if (!isUserDisconnected && key.isWritable()) {
+                    ClientSession session = clientMap.get(key);
+                    if (session == null) {
+                        LOGGER.log(Level.ERROR, "Client session not found.");
+                        continue;
+                    }
+
+                    if (session.hasFileForDownload) {
+                        DownloadCommand.continueDownload(session);
                     }
                 }
 
-                this.closeClientConnection(client);
+
             } catch (IOException e) {
-                LOGGER.log(Level.ERROR, "Can't close connection.");
+                LOGGER.log(Level.ERROR, e.getMessage());
             }
         }
-    }
 
-
-    private void initStream(Socket s) throws IOException {
-        is = new DataInputStream(s.getInputStream());
-        os = new DataOutputStream(s.getOutputStream());
-    }
-
-    private void closeClientConnection(Socket s) throws IOException {
-        is.close();
-        os.close();
-        s.close();
-        System.out.println("Client has been disconnected!");
-    }
-
-    public Storage getUuidStorage() {
-        return uuidStorage;
+        selector.selectedKeys().clear();
     }
 }
