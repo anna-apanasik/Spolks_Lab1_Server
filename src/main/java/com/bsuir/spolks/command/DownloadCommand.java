@@ -1,7 +1,6 @@
 package com.bsuir.spolks.command;
 
 import com.bsuir.spolks.connection.Connection;
-import com.bsuir.spolks.controller.Controller;
 import org.apache.logging.log4j.Level;
 
 import java.io.*;
@@ -23,12 +22,12 @@ class DownloadCommand extends AbstractCommand {
      * Execute command.
      */
     @Override
-    public void execute() {
+    public void execute(Connection connection) {
         try {
             String path = getTokens().get(AvailableToken.PATH.getName());
 
             if (path != null) {
-                executeDownload(path);
+                executeDownload(path, connection);
             }
         } catch (IOException e) {
             LOGGER.log(Level.ERROR, "Error: " + e.getMessage());
@@ -45,9 +44,7 @@ class DownloadCommand extends AbstractCommand {
         return new DownloadCommand();
     }
 
-    private void executeDownload(String path) throws IOException {
-        Connection connection = Controller.getInstance().getConnection();
-
+    private void executeDownload(String path, Connection connection) throws IOException {
         if (connection != null)    {
             File file = new File(path);
 

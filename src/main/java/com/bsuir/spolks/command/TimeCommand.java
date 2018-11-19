@@ -17,8 +17,7 @@ class TimeCommand extends AbstractCommand {
      * Execute command.
      */
     @Override
-    public void execute() {
-        Connection connection = Controller.getInstance().getConnection();
+    public void execute(Connection connection) {
 
         if(connection != null) {
             try {

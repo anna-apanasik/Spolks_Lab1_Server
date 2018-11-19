@@ -6,11 +6,17 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 public final class Controller {
 
+    private static final int PORT = 9999;
+    private static final int BACKLOG = 10;
     /**
      * Logger to getCommand logs.
      */
@@ -30,9 +36,9 @@ public final class Controller {
      * Reentrant lock.
      */
     private static ReentrantLock lock = new ReentrantLock();
+    private ServerSocket socket;
 
-    private Connection connection;
-
+    private ArrayList<Connection> connections  = new ArrayList<>();
     private InputManager keyboard;
 
     private Controller() {
@@ -67,30 +73,19 @@ public final class Controller {
      * Start working controller.
      */
     public void work() {
-        connection = new Connection();
+        try {
+            socket = new ServerSocket(PORT, BACKLOG);
+            LOGGER.log(Level.INFO, "Server started.");
+            while (!socket.isClosed()) {
+                Socket client = socket.accept();
+                connections.add(new Connection(client));
 
-        if (connection.open()) {
-            connection.listen();
+            }
+        } catch (IOException e) {
+            LOGGER.log(Level.ERROR, "Couldn't listen to port " + PORT);
         }
     }
 
-    /**
-     * Set connection.
-     *
-     * @param c connection instance
-     */
-    public void setConnection(Connection c) {
-        this.connection = c;
-    }
-
-    /**
-     * Get opened connection.
-     *
-     * @return connection
-     */
-    public Connection getConnection() {
-        return connection;
-    }
 
     /**
      * Get keyboard instance.

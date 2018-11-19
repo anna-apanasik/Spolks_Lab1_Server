@@ -17,12 +17,12 @@ public class EchoCommand extends AbstractCommand {
      * Execute command.
      */
     @Override
-    public void execute() {
+    public void execute(Connection connection) {
         try {
             String content = getTokens().get(AvailableToken.CONTENT.getName());
 
             if (content != null) {
-                executeEcho(content);
+                executeEcho(content, connection);
             }
         } catch (IOException e) {
             LOGGER.log(Level.ERROR, "Error: " + e.getMessage());
@@ -39,10 +39,9 @@ public class EchoCommand extends AbstractCommand {
         return new EchoCommand();
     }
 
-    private void executeEcho(String content) throws IOException {
+    private void executeEcho(String content , Connection connection) throws IOException {
         LOGGER.log(Level.INFO, "Received message: " + content);
-        Connection connection = Controller.getInstance().getConnection();
-        connection.write("Message was received");
+        connection.write("Message was received: " + content);
     }
 
     private enum AvailableToken {
